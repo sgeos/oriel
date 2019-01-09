@@ -7,6 +7,11 @@
 # General application configuration
 use Mix.Config
 
+# Application configuration
+config :oriel,
+  ttl: {:system, "TTL", 1*24*60*60}, # seconds
+  ttl_heartbeat: {:system, "TTL_HEARTBEAT", 1000} # milliseconds
+
 # Configures the endpoint
 config :oriel, OrielWeb.Endpoint,
   url: [host: "localhost"],
