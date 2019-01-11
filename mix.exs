@@ -40,7 +40,9 @@ defmodule Oriel.MixProject do
       {:distillery, "~> 2.0"},
       {:absinthe, "~> 1.4"},
       {:absinthe_plug, "~> 1.4"},
-      {:timex, "~> 3.4"}
+      {:timex, "~> 3.4"},
+      {:libcluster, "~> 3.0"},
+      {:mnesiac, "~> 0.2.0"},
     ]
   end
 end

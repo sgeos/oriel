@@ -4,14 +4,38 @@ defmodule Oriel.Application do
   @moduledoc false
 
   use Application
+  alias Oriel.Config
+  alias Oriel.Cache.Store
+
+  defp init_nodes(nodes) do
+    node()
+    |> IO.inspect
+    nodes
+    |> IO.inspect
+    Store.auto_setup_disc_database(nodes)
+    Mnesiac.init_mnesia(nodes)
+  end
 
   def start(_type, _args) do
+    this_node = [node()]
+    init_nodes(this_node)
+    nodes = Config.get_atom_list(:oriel, :node_list, [node()])
+    topologies = [
+      epmd: [
+        strategy: Cluster.Strategy.Epmd,
+        config: [hosts: nodes],
+        connect: {:net_kernel, :connect_node, []},
+        disconnect: {:erlang, :disconnect_node, []},
+        list_nodes: {:erlang, :nodes, [:connected]},
+      ]
+    ]
+
     # List all child processes to be supervised
     children = [
-      # Start the endpoint when the application starts
+      {Cluster.Supervisor, [topologies, [name: Oriel.ClusterSupervisor]]},
+      {Mnesiac.Supervisor, [nodes, [name: Oriel.MnesiacSupervisor]]},
+      Oriel.Cache.Server,
       OrielWeb.Endpoint
-      # Starts a worker by calling: Oriel.Worker.start_link(arg)
-      # {Oriel.Worker, arg},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

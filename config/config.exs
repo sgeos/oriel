@@ -10,7 +10,8 @@ use Mix.Config
 # Application configuration
 config :oriel,
   ttl: {:system, "TTL", 1*24*60*60}, # seconds
-  ttl_heartbeat: {:system, "TTL_HEARTBEAT", 1000} # milliseconds
+  ttl_heartbeat: {:system, "TTL_HEARTBEAT", 1000}, # milliseconds
+  node_list: {:system, "NODE_LIST"}
 
 # Configures the endpoint
 config :oriel, OrielWeb.Endpoint,
@@ -27,6 +28,16 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :mnesia,
+  dir: '/etc/.mnesia/#{Mix.env}/#{node()}'        # Notice the single quotes
+  #dir: '.mnesia/#{Mix.env}/#{node()}'        # Notice the single quotes
+
+config :mnesiac,
+  stores: [DevcorsCache.Resource],
+  schema_type: :disc_copies,
+  table_load_timeout: 600_000 # milliseconds
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
+

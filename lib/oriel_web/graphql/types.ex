@@ -25,6 +25,40 @@ defmodule OrielWeb.GraphQL.Types do
     field :version, :string
   end
 
+  object :item do
+    field :item_id, non_null(:string)
+    field :owner_id, non_null(:string)
+    field :type, non_null(:string)
+    field :position, non_null(:string)
+    field :remote_ip, non_null(:ip_address)
+    field :created_at, non_null(:datetime)
+    field :updated_at, non_null(:datetime)
+  end
+
+  input_object :create_item_input do
+    field :item_id, non_null(:string)
+    field :owner_id, non_null(:string)
+    field :type, non_null(:string)
+    field :position, non_null(:string)
+  end
+
+  input_object :read_item_input do
+    field :item_id, non_null(:string)
+    field :owner_id, non_null(:string)
+  end
+
+  input_object :update_item_input do
+    field :item_id, non_null(:string)
+    field :owner_id, non_null(:string)
+    field :type, :string
+    field :position, :string
+  end
+
+  input_object :delete_item_input do
+    field :item_id, non_null(:string)
+    field :owner_id, non_null(:string)
+  end
+
   @desc """
   The `IP Address` scalar type represents ip address values.
   """
