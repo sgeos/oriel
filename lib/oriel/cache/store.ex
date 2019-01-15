@@ -88,6 +88,11 @@ defmodule Oriel.Cache.Store do
   def update(_input), do: stub() |> Map.merge(updated_now()) # TODO: write
   def delete(_input), do: stub() # TODO: write
 
-  def auto_setup_disc_database(_input), do: :stub # TODO: write
+  def auto_setup_disc_database(nodes) do
+    if path = Application.get_env(:mnesia, :dir) do
+      :ok = File.mkdir_p!(path)
+    end
+    :mnesia.create_schema(nodes)
+  end
 end
 

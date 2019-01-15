@@ -1,0 +1,68 @@
+# project settings
+export PROJECT_NAME="$(grep 'app:' mix.exs | sed -e 's/\[//g' -e 's/ //g' -e 's/app://' -e 's/[:,]//g')"
+export PROJECT_VERSION="$(grep 'version:' mix.exs | cut -d '"' -f2)"
+
+# docker settings
+export DOCKERFILE="tools/docker/Dockerfile"
+export DOCKER_ENV_FILE="tools/docker/docker.env"
+export DOCKER_REPOSITORY="docker_repository"
+export DOCKER_IMAGE="${DOCKER_REPOSITORY}/${PROJECT_NAME}:${PROJECT_VERSION}"
+export DOCKER_IMAGE_LATEST="${DOCKER_REPOSITORY}/${PROJECT_NAME}:latest"
+
+# Erlang Settings
+export LOCAL_IP="$(elixir -e '{:ok, ifs} = :inet.getif(); ifs |> Enum.map(fn {ip, _broadaddr, _mask} -> ip end) |> List.first |> :inet.ntoa |> IO.puts')"
+export REPLACE_OS_VARS="true"
+export NODE_NAME="oriel_1@${LOCAL_IP}"
+export NODE_LIST="oriel_1@${LOCAL_IP},oriel_2@${LOCAL_IP},oriel_3@${LOCAL_IP}"
+export NODE_COOKIE="4Oo5CHqc+wHGmaSTm389nR4sfpCLh6VCzHZeenfaOHXdFBBAk7cYRM88h3qzBB76"
+
+# Phoenix Settings
+export HOST="oriel.example.org"
+export PORT="8080"
+export SECRET_KEY_BASE="6MJUwlMsGiGWwhTIExNXGbtsmdCtznQ0r6KV0k+pZBiJQ1YdLIxruxd+dr+or5WO"
+
+# Application Settings
+export TTL="$(echo '1*24*60*60' | bc)"
+export TTL_HEARTBEAT="$(echo '1*1000' | bc)"
+
+echo_value() {
+  sh -c "if [ -n \"\$${1}\" ]; then echo \"${1}=\$${1}\"; else echo '${1}=(default value)'; fi"
+}
+
+echo_secret() {
+  sh -c "if [ -n \"\$${1}\" ]; then echo \"${1}=\$${1}\" | sed 's/=.*/=********/' ; else echo '${1}=(default value)'; fi"
+}
+
+echo_credentials() {
+  sh -c "if [ -n \"\$${1}\" ]; then echo \"${1}=\$${1}\" | sed 's/:.*/:********/' ; else echo '${1}=(default value)'; fi"
+}
+
+echo             ""
+echo             "--- Project Settings ---"
+echo_value       PROJECT_NAME
+echo_value       PROJECT_VERSION
+echo             ""
+echo             "--- Docker Settings ---"
+echo_value       DOCKERFILE
+echo_value       DOCKER_ENV_FILE
+echo_value       DOCKER_REPOSITORY
+echo_value       DOCKER_IMAGE
+echo_value       DOCKER_IMAGE_LATEST
+echo             ""
+echo             "--- Erlang Settings ---"
+echo_value       REPLACE_OS_VARS
+echo_value       NODE_NAME
+echo_value       NODE_LIST
+echo_secret      NODE_COOKIE
+echo             ""
+echo             "--- Phoenix Settings ---"
+echo_value       HOST
+echo_value       PORT
+echo_secret      SECRET_KEY_BASE
+echo             ""
+echo             "--- Application Settings ---"
+echo_value       TTL
+echo_value       TTL_HEARTBEAT
+echo             ""
+# echo_credentials ENVIRONMENT_VARIABLE
+

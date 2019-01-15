@@ -15,6 +15,7 @@
 
 # If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
+MnesiaCore.*
 
 # Also ignore archive artifacts (built via "mix archive.build").
 *.ez
@@ -22,6 +23,16 @@ erl_crash.dump
 
 # Ignore package tarball (built via "mix hex.build").
 oriel-*.tar
+
+# Ignore database
+.mnesia
+
+# Sensitive files
+tools/*.sh
+tools/*.xml
+docker/*.env
+docker/*.yml
+docker/*.yaml
 
 # Since we are building assets from assets/,
 # we ignore priv/static. You may want to comment
@@ -35,4 +46,10 @@ oriel-*.tar
 # secrets files as long as you replace their contents by environment
 # variables.
 /config/*.secret.exs
+
+# MacOS
+*.DS_Store
+
+# vim
+*.swp
 

@@ -33,7 +33,7 @@ config :mnesia,
   #dir: '.mnesia/#{Mix.env}/#{node()}'        # Notice the single quotes
 
 config :mnesiac,
-  stores: [DevcorsCache.Resource],
+  stores: [Oriel.Cache.Store],
   schema_type: :disc_copies,
   table_load_timeout: 600_000 # milliseconds
 
