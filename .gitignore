@@ -30,9 +30,9 @@ oriel-*.tar
 # Sensitive files
 tools/*.sh
 tools/*.xml
-docker/*.env
-docker/*.yml
-docker/*.yaml
+tools/docker/*.env
+tools/docker/*.yml
+tools/docker/*.yaml
 
 # Since we are building assets from assets/,
 # we ignore priv/static. You may want to comment

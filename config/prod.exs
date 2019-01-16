@@ -10,9 +10,14 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :oriel, OrielWeb.Endpoint,
-  http: [:inet6, port: System.get_env("PORT") || 4000],
-  url: [host: "example.com", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  load_from_system_env: true,
+  http: [port: {:system, "PORT"}],
+  url: [host: "${HOST}", port: {:system, "PORT"}],
+  # cache_static_manifest: "priv/static/cache_manifest.json",
+  server: true,
+  # root: ".",
+  version: Mix.Project.config[:version],
+  secret_key_base: "${SECRET_KEY_BASE}"
 
 # Do not print debug messages in production
 config :logger, level: :info
@@ -66,6 +71,6 @@ config :logger, level: :info
 # Note you can't rely on `System.get_env/1` when using releases.
 # See the releases documentation accordingly.
 
-# Finally import the config/prod.secret.exs which should be versioned
-# separately.
-import_config "prod.secret.exs"
+config :mnesia,
+  dir: '/etc/.mnesia/prod/${NODE_NAME}'
+

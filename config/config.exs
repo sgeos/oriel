@@ -15,8 +15,9 @@ config :oriel,
 
 # Configures the endpoint
 config :oriel, OrielWeb.Endpoint,
-  url: [host: "localhost"],
-  secret_key_base: "lWzQPQn5HBKrkRom+RWkpmZ4zaN1PEDwlfwlKHsxnLBpiwptT4WqPz4r/ppE0QDv",
+  http: [port: System.get_env("PORT") || 8080],
+  url: [host: System.get_env("HOST") || "localhost", port: {:system, "PORT"}],
+  secret_key_base: System.get_env("SECRET_KEY_BASE") || "lWzQPQn5HBKrkRom+RWkpmZ4zaN1PEDwlfwlKHsxnLBpiwptT4WqPz4r/ppE0QDv",
   render_errors: [view: OrielWeb.ErrorView, accepts: ~w(json)],
   pubsub: [name: Oriel.PubSub, adapter: Phoenix.PubSub.PG2]
 

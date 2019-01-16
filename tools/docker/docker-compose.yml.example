@@ -1,0 +1,72 @@
+# cp tools/docker/docker-compose.yml.example tools/docker/docker-compose.yml
+# (edit tools/docker/docker-compose.yml)
+# docker-compose --file tools/docker/docker-compose.yml up
+version: "3"
+
+services:
+
+  node1.example.com:
+    restart: always
+    build:
+      dockerfile: "tools/docker/Dockerfile"
+      context: "."
+    image: docker_repository/oriel:latest
+    env_file:
+      - ./docker.env.example
+    environment:
+      HOSTNAME: "node1.example.com"
+      NODE_NAME: "oriel@node1.example.com"
+      NODE_LIST: "oriel@node1.example.com,oriel@node2.example.com,oriel@node3.example.com"
+      PORT: "8081"
+    command: bin/oriel foreground
+    ports:
+      - "8081:8081"
+    volumes:
+      - oriel-mnesia-data:/etc/.mnesia
+
+  node2.example.com:
+    restart: always
+    build:
+      dockerfile: "tools/docker/Dockerfile"
+      context: "."
+    image: docker_repository/oriel:latest
+    env_file:
+      - ./docker.env.example
+    environment:
+      HOSTNAME: "node2.example.com"
+      NODE_NAME: "oriel@node2.example.com"
+      NODE_LIST: "oriel@node1.example.com,oriel@node2.example.com,oriel@node3.example.com"
+      PORT: "8082"
+    command: bin/oriel foreground
+    ports:
+      - "8082:8082"
+    volumes:
+      - oriel-mnesia-data:/etc/.mnesia
+
+  node3.example.com:
+    restart: always
+    build:
+      dockerfile: "tools/docker/Dockerfile"
+      context: "."
+    image: docker_repository/oriel:latest
+    env_file:
+      - ./docker.env.example
+    environment:
+      HOSTNAME: "node3.example.com"
+      NODE_NAME: "oriel@node3.example.com"
+      NODE_LIST: "oriel@node1.example.com,oriel@node2.example.com,oriel@node3.example.com"
+      PORT: "8083"
+    command: bin/oriel foreground
+    ports:
+      - "8083:8083"
+    volumes:
+      - oriel-mnesia-data:/etc/.mnesia
+
+volumes:
+  oriel-mnesia-data:
+      driver: local
+      driver_opts:
+        type: "none"
+        o: "bind"
+        device: "/etc/.mnesia"
+
