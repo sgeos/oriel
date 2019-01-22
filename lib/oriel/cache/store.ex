@@ -4,11 +4,37 @@ defmodule Oriel.Cache.Store do
   """
   require Record
 
+  @table_wait_time 10_000 # milliseconds
+
+  Record.defrecord(
+    :item_key,
+    item_id: nil,
+    owner_id: nil
+  )
+
+  @type item_key ::
+    record(
+      :item_key,
+      item_id: String.t(),
+      owner_id: String.t()
+    )
+
+  Record.defrecord(
+    :item_key_owner_search,
+    item_id: nil,
+    owner_id_list: []
+  )
+
+  @type item_key_owner_search ::
+    record(
+      :item_key_owner_search,
+      item_id: String.t(),
+      owner_id_list: list(String.t())
+    )
+
   Record.defrecord(
     :item,
-    __MODULE__,
-    item_id: nil,
-    owner_id: nil,
+    key: {:item_key, nil, nil},
     type: nil,
     position: nil,
     remote_ip: nil,
@@ -19,8 +45,7 @@ defmodule Oriel.Cache.Store do
   @type item ::
     record(
       :item,
-      item_id: String.t(),
-      owner_id: String.t(),
+      key: item_key,
       type: String.t(),
       position: String.t(),
       remote_ip: tuple(),
@@ -35,9 +60,14 @@ defmodule Oriel.Cache.Store do
   """
   def init_store do
     :mnesia.create_table(
-      __MODULE__,
-      attributes: item() |> item() |> Keyword.keys(),
-      index: [:owner_id, :updated_at],
+      :item,
+      attributes: store_keys(:item),
+      index: [:updated_at],
+      disc_copies: [Node.self()]
+    )
+    :mnesia.create_table(
+      :item_key_owner_search,
+      attributes: store_keys(:item_key_owner_search),
       disc_copies: [Node.self()]
     )
   end
@@ -46,7 +76,8 @@ defmodule Oriel.Cache.Store do
   Mnesiac will call this method to copy the table
   """
   def copy_store do
-    :mnesia.add_table_copy(__MODULE__, Node.self(), :disc_copies)
+    :mnesia.add_table_copy(:item, Node.self(), :disc_copies)
+    :mnesia.add_table_copy(:item_key_search_owner, Node.self(), :disc_copies)
   end
 
   ## Utility Functions
@@ -58,6 +89,118 @@ defmodule Oriel.Cache.Store do
   end
 
   defp updated_now, do: %{updated_at: DateTime.utc_now |> Timex.to_unix}
+
+  defp store_keys(:item) do
+    item()
+    |> item()
+    |> Keyword.keys()
+  end
+
+  defp store_keys(:item_key) do
+    item_key()
+    |> item_key()
+    |> Keyword.keys()
+  end
+
+  defp store_keys(:item_key_owner_search) do
+    item_key_owner_search()
+    |> item_key_owner_search()
+    |> Keyword.keys()
+  end
+
+  defp store_record(input, :item), do: input |> item()
+  defp store_record(input, :inline_item) do
+    result = input
+    |> item()
+    key = result
+    |> Keyword.get(:key)
+    |> store_record(:item_key)
+    result
+    |> Keyword.put(:key, key)
+  end
+  defp store_record(input, :item_key), do: input |> item_key()
+  defp store_record(input, :item_key_owner_search), do: input |> item_key_owner_search()
+
+  defp nest_map_key_field(map, key) do
+    new_key = map
+    |> Map.get(:key, %{})
+    |> Map.put(key, map[key])
+    map
+    |> Map.put(:key, new_key)
+    |> Map.delete(key)
+  end
+
+  defp nest_map_key(map, fields) when is_list(fields) do
+    fields
+    |> Enum.reduce(map, fn key, map -> map |> nest_map_key_field(key) end)
+  end
+  defp nest_map_key(map, :item), do: map |> nest_map_key(store_keys(:item_key))
+  defp nest_map_key(map, _type), do: map
+
+  defp unnest_map_key(%{key: key}=map) do
+    map
+    |> Map.merge(key)
+    |> Map.delete(:key)
+  end
+  defp unnest_map_key(map), do: map
+
+  # NOTE: :key is hard coded because it is a nested special case
+  defp extract_value(input, :key) do
+    input[:key]
+    |> map_to_store_record(:item_key)
+  end
+  defp extract_value(input, key), do: input[key]
+
+  defp map_to_store_record(input, type \\ :item) do
+    nested_input = input
+    |> nest_map_key(type)
+    store_keys(type)
+    |> Enum.map(fn key -> nested_input |> extract_value(key) end)
+    |> List.insert_at(0, type)
+    |> List.to_tuple
+  end
+
+  defp store_record_to_map(input) when Record.is_record(input) do
+    type = input
+    |> elem(0)
+    input
+    |> store_record(type)
+    |> Enum.map(fn {k, v} -> {k, v |> store_record_to_map} end)
+    |> Enum.into(%{})
+    |> unnest_map_key()
+  end
+  defp store_record_to_map(input), do: input
+
+  defp do_map(list, action) do
+    list
+    |> Enum.map(action)
+    |> Enum.filter(fn r -> !is_nil(r) end)
+  end
+
+  defp mnesia_transaction(input, callback) when is_map(input) do
+    :mnesia.transaction(fn -> callback.(input) end)
+    |> mnesia_result
+  end
+
+  defp mnesia_transaction(input, callback) when is_list(input) do
+    :mnesia.transaction(fn -> input |> do_map(callback) end)
+    |> mnesia_result
+  end
+
+  defp mnesia_result(result) do
+    case result do
+      {:atomic, result} ->
+        result
+      {:aborted, {exception, stacktrace}} ->
+        :error
+        |> Exception.normalize(exception)
+        |> reraise(stacktrace)
+      {:aborted, error} ->
+        throw(error)
+      result ->
+        result
+    end
+  end
 
   ## Client API
 
@@ -72,27 +215,80 @@ defmodule Oriel.Cache.Store do
 
   def ttl_expire(_input), do: :stub # TODO: write
 
-  defp stub do # TODO: delete after real functions are written
-    %{
-      item_id: "stub",
-      owner_id: "stub",
-      type: "stub",
-      position: "stub",
-      remote_ip: {0,0,0,0},
-    }
+  defp create_or_update_transaction(input) do
+    record = input
     |> Map.merge(created_now())
+    |> map_to_store_record()
+    :mnesia.write(record)
+    |> case do
+      :ok ->
+        store_record_to_map(record)
+      _ ->
+        #{:error, "Failed to create record."}
+        nil
+    end
   end
 
-  def create(_input), do: stub() # TODO: write
-  def read(_input), do: stub() # TODO: write
-  def update(_input), do: stub() |> Map.merge(updated_now()) # TODO: write
-  def delete(_input), do: stub() # TODO: write
+  defp create_transaction(input) do
+    input
+    |> read_transaction
+    |> case do
+      nil ->
+        create_or_update_transaction(input)
+      existing ->
+        #existing
+        #{:error, "Record with key {input_id: #{input[:item_id]}, owner_id: #{input[:owner_id]}} already exists."}
+        nil
+    end
+  end
+
+  def create(input), do: input |> mnesia_transaction(&create_transaction/1)
+
+  defp read_transaction(input) do
+    key = input
+    |> map_to_store_record(:item_key)
+    :mnesia.match_object({:item, key, :_, :_, :_, :_, :_})
+    |> List.first
+    |> store_record_to_map()
+  end
+
+  def read(input), do: input |> mnesia_transaction(&read_transaction/1)
+
+  defp update_transaction(input) do
+    input
+    |> read_transaction
+    |> case do
+      nil ->
+        #{:error, "Record with key {input_id: #{input[:item_id]}, owner_id: #{input[:owner_id]}} does not exist."}
+        nil
+      existing ->
+        create_or_update_transaction(existing |> Map.merge(input))
+    end
+  end
+
+  def update(input), do: input |> mnesia_transaction(&update_transaction/1)
+
+  defp delete_transaction(input) do
+    input
+    |> read_transaction
+    |> case do
+      nil ->
+        #{:error, "Record with key {input_id: #{input[:item_id]}, owner_id: #{input[:owner_id]}} does not exist."}
+        nil
+      existing ->
+        :mnesia.delete({:item, input |> map_to_store_record(:item_key)})
+        existing
+    end
+  end
+
+  def delete(input), do: input |> mnesia_transaction(&delete_transaction/1)
 
   def auto_setup_disc_database(nodes) do
     if path = Application.get_env(:mnesia, :dir) do
       :ok = File.mkdir_p!(path)
     end
     :mnesia.create_schema(nodes)
+    :mnesia.wait_for_tables([:item, :item_key_search_owner], @table_wait_time)
   end
 end
 
