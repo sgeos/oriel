@@ -76,6 +76,39 @@ Read Query Variables
 }
 ```
 
+Read by ID Queries
+```graphql
+query ReadById($itemId: String!, $itemIds: [String]!) {
+  getItemsById(itemId: $itemId) {
+    ...AllItemFields
+  }
+  getItemsByIds(itemIds: $itemIds) {
+    ...AllItemFields
+  }
+}
+
+fragment AllItemFields on Item {
+  itemId
+  ownerId
+  type
+  position
+  remoteIp
+  createdAt
+  updatedAt
+}
+```
+
+Read by ID Query Variables
+```javascript
+{
+  "itemId": "itemId1",
+  "itemIds": [
+    "itemId2",
+    "itemId3"
+  ]
+}
+```
+
 ## Mutations
 
 Create Queries

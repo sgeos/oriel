@@ -77,7 +77,7 @@ defmodule Oriel.Cache.Store do
   """
   def copy_store do
     :mnesia.add_table_copy(:item, Node.self(), :disc_copies)
-    :mnesia.add_table_copy(:item_key_search_owner, Node.self(), :disc_copies)
+    :mnesia.add_table_copy(:item_key_owner_search, Node.self(), :disc_copies)
   end
 
   ## Utility Functions
@@ -181,9 +181,13 @@ defmodule Oriel.Cache.Store do
     :mnesia.transaction(fn -> callback.(input) end)
     |> mnesia_result
   end
-
   defp mnesia_transaction(input, callback) when is_list(input) do
     :mnesia.transaction(fn -> input |> do_map(callback) end)
+    |> mnesia_result
+  end
+
+  defp mnesia_raw_transaction(input, callback) do
+    :mnesia.transaction(fn -> callback.(input) end)
     |> mnesia_result
   end
 
@@ -215,13 +219,62 @@ defmodule Oriel.Cache.Store do
 
   def ttl_expire(_input), do: :stub # TODO: write
 
+  def get_item_owners(%{item_id: key}) do
+    {:item_key_owner_search, key}
+    |> :mnesia.read()
+    |> List.first
+    |> case do
+      {:item_key_owner_search, ^key, search_id_list} ->
+        search_id_list
+      nil ->
+        []
+    end
+  end
+
+  defp get_items_by_id_transaction(input) do
+    input
+    |> Enum.map(&({&1, get_item_owners(%{item_id: &1})}))
+    |> Enum.map(fn {item_id, list} -> list |> Enum.map(&({:item_key, item_id, &1})) end)
+    |> Enum.reduce([], &Kernel.++/2)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.map(&(:mnesia.read({:item, &1})))
+    |> Enum.reduce([], &Kernel.++/2)
+    |> Enum.map(&store_record_to_map/1)
+  end
+
+  def get_items_by_id(input), do: input |> mnesia_raw_transaction(&get_items_by_id_transaction/1)
+
+  defp append_search_id(%{item_id: key, owner_id: search_id}=input) do
+    input
+    |> get_item_owners()
+    |> Kernel.++([search_id])
+    |> Enum.uniq
+    |> case do
+      search_id_list ->
+        :mnesia.write({:item_key_owner_search, key, search_id_list})
+    end
+  end
+
+  defp remove_search_id(%{item_id: key, owner_id: search_id}=input) do
+    input
+    |> get_item_owners()
+    |> Kernel.--([search_id])
+    |> case do
+      [] ->
+        :mnesia.delete({:item_key_owner_search, key})
+      search_id_list ->
+        :mnesia.write({:item_key_owner_search, key, search_id_list})
+    end
+  end
+
   defp create_or_update_transaction(input) do
     record = input
-    |> Map.merge(created_now())
     |> map_to_store_record()
     :mnesia.write(record)
     |> case do
       :ok ->
+        append_search_id(input)
         store_record_to_map(record)
       _ ->
         #{:error, "Failed to create record."}
@@ -234,8 +287,10 @@ defmodule Oriel.Cache.Store do
     |> read_transaction
     |> case do
       nil ->
-        create_or_update_transaction(input)
-      existing ->
+        input
+        |> Map.merge(created_now())
+        |> create_or_update_transaction()
+      _existing ->
         #existing
         #{:error, "Record with key {input_id: #{input[:item_id]}, owner_id: #{input[:owner_id]}} already exists."}
         nil
@@ -247,7 +302,7 @@ defmodule Oriel.Cache.Store do
   defp read_transaction(input) do
     key = input
     |> map_to_store_record(:item_key)
-    :mnesia.match_object({:item, key, :_, :_, :_, :_, :_})
+    :mnesia.read({:item, key})
     |> List.first
     |> store_record_to_map()
   end
@@ -262,7 +317,10 @@ defmodule Oriel.Cache.Store do
         #{:error, "Record with key {input_id: #{input[:item_id]}, owner_id: #{input[:owner_id]}} does not exist."}
         nil
       existing ->
-        create_or_update_transaction(existing |> Map.merge(input))
+        existing
+        |> Map.merge(input)
+        |> Map.merge(updated_now())
+        |> create_or_update_transaction()
     end
   end
 
@@ -277,6 +335,7 @@ defmodule Oriel.Cache.Store do
         nil
       existing ->
         :mnesia.delete({:item, input |> map_to_store_record(:item_key)})
+        remove_search_id(input)
         existing
     end
   end
@@ -288,7 +347,7 @@ defmodule Oriel.Cache.Store do
       :ok = File.mkdir_p!(path)
     end
     :mnesia.create_schema(nodes)
-    :mnesia.wait_for_tables([:item, :item_key_search_owner], @table_wait_time)
+    :mnesia.wait_for_tables([:item, :item_key_owner_search], @table_wait_time)
   end
 end
 

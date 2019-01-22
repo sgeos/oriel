@@ -17,5 +17,8 @@ defmodule OrielWeb.GraphQL.Resolver.Item do
 
   def delete(_parent, %{item: item}=_args, _info), do: {:ok, Server.delete(item)}
   def delete(_parent, %{items: items}=_args, _info), do: {:ok, Server.delete(items)}
+
+  def get_items_by_id(_parent, %{item_id: item_id}=_args, _info), do: {:ok, Server.get_items_by_id([item_id])}
+  def get_items_by_id(_parent, %{item_ids: item_ids}=_args, _info), do: {:ok, Server.get_items_by_id(item_ids)}
 end
 

@@ -21,6 +21,16 @@ defmodule OrielWeb.GraphQL.Schema do
       arg :items, non_null(list_of(:read_item_input))
       resolve &Resolver.Item.read(&1, &2, &3)
     end
+
+    field :get_items_by_id, type: list_of(:item) do
+      arg :item_id, non_null(:string)
+      resolve &Resolver.Item.get_items_by_id(&1, &2, &3)
+    end
+
+    field :get_items_by_ids, type: list_of(:item) do
+      arg :item_ids, non_null(list_of(:string))
+      resolve &Resolver.Item.get_items_by_id(&1, &2, &3)
+    end
   end
 
   mutation do
