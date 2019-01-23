@@ -92,9 +92,15 @@ defmodule Oriel.Cache.Server do
 
   def init(state), do: {:ok, next_ttl_expire(state)}
 
-  def handle_call(:info, _from, state) do
+  def handle_call(:info, _from, %{ttl: ttl, ttl_heartbeat: ttl_heartbeat}=state) do
     reply = state
     |> Map.merge(Store.info())
+    |> Map.merge(
+      %{
+        ttl: Timex.Duration.from_seconds(ttl),
+        ttl_heartbeat: Timex.Duration.from_milliseconds(ttl_heartbeat),
+      }
+    )
     {:reply, reply, state, @timeout}
   end
 

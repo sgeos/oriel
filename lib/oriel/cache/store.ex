@@ -216,7 +216,8 @@ defmodule Oriel.Cache.Store do
   ## Client API
 
   def info do
-    :mnesia.system_info
+    :all
+    |> :mnesia.system_info
     |> Enum.into(%{})
     |> Map.merge(%{
       node: node() |> to_string,

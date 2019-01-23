@@ -19,8 +19,8 @@ defmodule OrielWeb.GraphQL.Types do
     field :node_list, list_of(:string)
     field :node_visible, list_of(:string)
     field :time, :time
-    field :ttl, :integer
-    field :ttl_heartbeat, :integer
+    field :ttl, :duration
+    field :ttl_heartbeat, :duration
     field :remote_ip, :ip_address
     field :version, :string
   end
@@ -82,6 +82,15 @@ defmodule OrielWeb.GraphQL.Types do
       |> :inet.parse_address
     end
     serialize &(to_string(:inet_parse.ntoa(&1)))
+  end
+
+  @desc """
+  The `Duration` scalar type represents ISO 8601 duration values.
+  """
+  scalar :duration do
+    description "ISOz date",
+    parse &(Timex.Duration.parse(&1.value))
+    serialize &Timex.Duration.to_string/1
   end
 
   @desc """

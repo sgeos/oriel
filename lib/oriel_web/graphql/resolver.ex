@@ -1,5 +1,6 @@
 defmodule OrielWeb.GraphQL.Resolver do
   alias Oriel.Config
+  alias Oriel.Cache.Server
 
   defp application_key_as_string(key, default \\ "(unknown)") do
     :application.get_key(:oriel, key)
@@ -34,14 +35,10 @@ defmodule OrielWeb.GraphQL.Resolver do
 
   def info(_args, %{context: %{remote_ip: remote_ip}}=_info) do
     result = %{
-      node: node() |> to_string,
-      node_list: [node() | Node.list()] |> Enum.map(&to_string/1),
-      node_visible: [node() | Node.list(:visible)] |> Enum.map(&to_string/1),
       remote_ip: remote_ip,
-      ttl: Config.get_integer(:oriel, :ttl),
-      ttl_heartbeat: Config.get_integer(:oriel, :ttl_heartbeat),
-      version: application_key_as_string(:vsn)
+      version: application_key_as_string(:vsn),
     }
+    |> Map.merge(Server.info())
     {:ok, Map.merge(result, datetime_set_now())}
   end
 end
