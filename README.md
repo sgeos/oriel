@@ -109,6 +109,51 @@ Read by ID Query Variables
 }
 ```
 
+Search Queries
+```graphql
+query Search($item: SearchItemInput!, $items: [SearchItemInput]!) {
+  search(item: $item) {
+    ...AllItemFields
+  }
+  searchUnion(items: $items) {
+    ...AllItemFields
+  }
+}
+
+fragment AllItemFields on Item {
+  itemId
+  ownerId
+  type
+  position
+  remoteIp
+  createdAt
+  updatedAt
+}
+```
+
+Search Query Variables
+```javascript
+{
+  "item": {
+    "itemId": "itemId1",
+    "ownerId": "ownerId1",
+    "type": "type1",
+    "position": "position1",
+    "remoteIp": "127.0.0.1",
+    "createdAt": "2019-01-22 14:14:29Z",
+    "updatedAt": "2019-01-22 14:14:29Z"
+  },
+  "items": [
+    {
+      "createdAt": "2019-01-22 14:14:29Z"
+    },
+    {
+      "updatedAt": "2019-01-22 14:14:29Z"
+    }
+  ]
+}
+```
+
 ## Mutations
 
 Create Queries

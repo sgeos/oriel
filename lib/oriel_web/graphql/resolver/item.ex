@@ -20,5 +20,8 @@ defmodule OrielWeb.GraphQL.Resolver.Item do
 
   def get_items_by_id(_parent, %{item_id: item_id}=_args, _info), do: {:ok, Server.get_items_by_id([item_id])}
   def get_items_by_id(_parent, %{item_ids: item_ids}=_args, _info), do: {:ok, Server.get_items_by_id(item_ids)}
+
+  def search(_parent, %{item: item}=_args, _info), do: {:ok, Server.search([item])}
+  def search(_parent, %{items: items}=_args, _info), do: {:ok, Server.search(items)}
 end
 

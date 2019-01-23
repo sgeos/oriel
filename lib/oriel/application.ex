@@ -8,10 +8,8 @@ defmodule Oriel.Application do
   alias Oriel.Cache.Store
 
   defp init_nodes(nodes) do
-    node()
-    |> IO.inspect
-    nodes
-    |> IO.inspect
+    IO.puts("Starting node: #{node() |> inspect}")
+    IO.puts("Node set: #{nodes |> inspect}")
     Store.auto_setup_disc_database(nodes)
     Mnesiac.init_mnesia(nodes)
   end

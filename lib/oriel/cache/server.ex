@@ -79,6 +79,9 @@ defmodule Oriel.Cache.Server do
   def get_items_by_id(input), do: GenServer.call(__MODULE__, {:get_items_by_id, input})
   def get_items_by_id(server, input), do: GenServer.call(server, {:get_items_by_id, input})
 
+  def search(input), do: GenServer.call(__MODULE__, {:search, input})
+  def search(server, input), do: GenServer.call(server, {:search, input})
+
   def ttl_expire(), do: ttl_expire(__MODULE__)
   def ttl_expire(server) do
     send(server, :ttl)
@@ -104,6 +107,8 @@ defmodule Oriel.Cache.Server do
   def handle_call({:delete, input}, _from, state), do: {:reply, Store.delete(input), state, @timeout}
 
   def handle_call({:get_items_by_id, input}, _from, state), do: {:reply, Store.get_items_by_id(input), state, @timeout}
+
+  def handle_call({:search, input}, _from, state), do: {:reply, Store.search(input), state, @timeout}
 
   def handle_call(_msg, state), do: {:noreply, state, @timeout}
 

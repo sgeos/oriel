@@ -59,12 +59,28 @@ defmodule OrielWeb.GraphQL.Types do
     field :owner_id, non_null(:string)
   end
 
+  input_object :search_item_input do
+    field :item_id, :string
+    field :owner_id, :string
+    field :type, :string
+    field :position, :string
+    field :remote_ip, :ip_address
+    field :created_at, :datetime
+    field :updated_at, :datetime
+  end
+
+  defp parse_ok(input), do: {:ok, input}
+
   @desc """
   The `IP Address` scalar type represents ip address values.
   """
   scalar :ip_address do
     description "IP address stored as a tuple",
-    parse &(&1) # identity
+    parse fn input ->
+      input.value
+      |> String.to_charlist
+      |> :inet.parse_address
+    end
     serialize &(to_string(:inet_parse.ntoa(&1)))
   end
 
@@ -79,6 +95,7 @@ defmodule OrielWeb.GraphQL.Types do
       |> String.replace("/", "-")
       |> Date.from_iso8601!
       |> Timex.to_unix
+      |> parse_ok
     end
     #serialize &Kernel.to_string/1
     serialize &(&1 |> Timex.from_unix |> DateTime.to_date |> Kernel.to_string)
@@ -95,6 +112,7 @@ defmodule OrielWeb.GraphQL.Types do
       |> Time.from_iso8601!
       |> Timex.Duration.from_time
       |> Timex.Duration.to_seconds
+      |> parse_ok
     end
     #serialize &Kernel.to_string/1
     serialize &(&1 |> Timex.Duration.from_seconds |> Timex.Duration.to_time! |> Kernel.to_string)
@@ -112,6 +130,7 @@ defmodule OrielWeb.GraphQL.Types do
       |> Timex.parse!("{ISO:Extended}")
       |> Timex.Timezone.convert("UTC")
       |> Timex.to_unix
+      |> parse_ok
     end
     #serialize fn time -> time |> Timex.format("%F %T", :strftime) end
     serialize &(&1 |> Timex.from_unix |> Kernel.to_string)

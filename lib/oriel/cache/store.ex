@@ -342,6 +342,27 @@ defmodule Oriel.Cache.Store do
 
   def delete(input), do: input |> mnesia_transaction(&delete_transaction/1)
 
+  defp search_transaction(input) do
+    input
+    # casting back and forth adds nil fields
+    |> map_to_store_record()
+    |> store_record_to_map()
+    # do not seach on fields that were not specified
+    |> Enum.map(fn {k, nil} -> {k, :_} ; v -> v end)
+    |> Enum.into(%{})
+    |> map_to_store_record()
+    |> :mnesia.match_object()
+    |> Enum.map(&store_record_to_map/1)
+  end
+
+  def search(input) when is_list(input) do
+    input
+    |> mnesia_transaction(&search_transaction/1)
+    |> Enum.reduce([], &Kernel.++/2)
+    |> Enum.uniq
+  end
+  def search(input), do: search([input])
+
   def auto_setup_disc_database(nodes) do
     if path = Application.get_env(:mnesia, :dir) do
       :ok = File.mkdir_p!(path)

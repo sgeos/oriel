@@ -31,6 +31,16 @@ defmodule OrielWeb.GraphQL.Schema do
       arg :item_ids, non_null(list_of(:string))
       resolve &Resolver.Item.get_items_by_id(&1, &2, &3)
     end
+
+    field :search, type: list_of(:item) do
+      arg :item, non_null(:search_item_input)
+      resolve &Resolver.Item.search(&1, &2, &3)
+    end
+
+    field :search_union, type: list_of(:item) do
+      arg :items, non_null(list_of(:search_item_input))
+      resolve &Resolver.Item.search(&1, &2, &3)
+    end
   end
 
   mutation do
