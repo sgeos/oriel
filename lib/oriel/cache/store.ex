@@ -90,6 +90,13 @@ defmodule Oriel.Cache.Store do
 
   defp updated_now, do: %{updated_at: DateTime.utc_now |> Timex.to_unix}
 
+  defp expiration_time(ttl), do: expiration_time(DateTime.utc_now, ttl)
+  defp expiration_time(date_time, ttl) do
+    date_time
+    |> Timex.subtract(Timex.Duration.from_seconds(ttl))
+    |> Timex.to_unix
+  end
+
   defp store_keys(:item) do
     item()
     |> item()
@@ -217,7 +224,19 @@ defmodule Oriel.Cache.Store do
     })
   end
 
-  def ttl_expire(_input), do: :stub # TODO: write
+  defp ttl_delete(input) do
+    :mnesia.delete({:item, input})
+    input
+    |> store_record_to_map
+    |> remove_search_id
+  end
+
+  def ttl_expire_transaction(ttl) do
+    :mnesia.select(:item, [{{:item, :"$1", :_, :_, :_, :_, :"$2"}, [{:"=<", :"$2", expiration_time(ttl)}], [:"$1"]}])
+    |> Enum.each(&ttl_delete/1)
+  end
+
+  def ttl_expire(input), do: input |> mnesia_raw_transaction(&ttl_expire_transaction/1)
 
   def get_item_owners(%{item_id: key}) do
     {:item_key_owner_search, key}
