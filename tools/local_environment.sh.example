@@ -14,12 +14,12 @@ export LOCAL_IP="$(elixir -e '{:ok, ifs} = :inet.getif(); ifs |> Enum.map(fn {ip
 export REPLACE_OS_VARS="true"
 export NODE_NAME="oriel_1@${LOCAL_IP}"
 export NODE_LIST="oriel_1@${LOCAL_IP},oriel_2@${LOCAL_IP},oriel_3@${LOCAL_IP}"
-export NODE_COOKIE="4Oo5CHqc+wHGmaSTm389nR4sfpCLh6VCzHZeenfaOHXdFBBAk7cYRM88h3qzBB76"
+export NODE_COOKIE="$(mix phx.gen.secret)"
 
 # Phoenix Settings
 export HOST="oriel.example.org"
 export PORT="8080"
-export SECRET_KEY_BASE="6MJUwlMsGiGWwhTIExNXGbtsmdCtznQ0r6KV0k+pZBiJQ1YdLIxruxd+dr+or5WO"
+export SECRET_KEY_BASE="$(mix phx.gen.secret)"
 
 # Application Settings
 export TTL="$(echo '1*24*60*60' | bc)"
