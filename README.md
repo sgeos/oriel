@@ -51,7 +51,9 @@ echo '1*24*60*60*1000' | bc
 Publish the docker image.
 
 ```sh
-# TODO
+docker login --username="${DOCKERHUB_USERNAME}"
+docker push "${DOCKER_IMAGE}"
+docker push "${DOCKER_IMAGE_LATEST}"
 ```
 
 ## curl
