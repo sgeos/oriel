@@ -10,7 +10,7 @@ services:
     build:
       dockerfile: "tools/docker/Dockerfile"
       context: "."
-    image: docker_repository/oriel:latest
+    image: dockerhub_username/oriel:latest
     env_file:
       - ./docker.env.example
     environment:
@@ -29,7 +29,7 @@ services:
     build:
       dockerfile: "tools/docker/Dockerfile"
       context: "."
-    image: docker_repository/oriel:latest
+    image: dockerhub_username/oriel:latest
     env_file:
       - ./docker.env.example
     environment:
@@ -48,7 +48,7 @@ services:
     build:
       dockerfile: "tools/docker/Dockerfile"
       context: "."
-    image: docker_repository/oriel:latest
+    image: dockerhub_username/oriel:latest
     env_file:
       - ./docker.env.example
     environment:

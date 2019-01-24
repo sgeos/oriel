@@ -1,0 +1,426 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd">
+<!-- EXCLUDE START : Linux DTD >
+  <!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd">
+< EXCLUDE END -->
+<!-- EXCLUDE START : MacOS DTD >
+  <!DOCTYPE tsung SYSTEM "/opt/local/share/tsung/tsung-1.0.dtd">
+< EXCLUDE END -->
+<tsung loglevel="notice" version="1.0">
+
+  <!-- Client side setup -->
+  <clients>
+    <client host="localhost" use_controller_vm="true" maxusers="1000"/>
+  </clients>
+
+  <!-- Server side setup -->
+  <servers>
+    <server host="localhost" port="8081" type="tcp"/>
+    <server host="localhost" port="8082" type="tcp"/>
+    <server host="localhost" port="8083" type="tcp"/>
+  </servers>
+
+  <!-- to start os monitoring (cpu, network, memory). Use an erlang
+  agent on the remote machine or SNMP. erlang is the default -->
+  <monitoring>
+    <monitor host="localhost" type="erlang"></monitor>
+  </monitoring>
+
+  <load>
+  <!-- several arrival phases can be set: for each phase, you can set
+  the mean inter-arrival time between new clients and the phase
+  duration -->
+    <arrivalphase phase="1" duration="60" unit="second" wait_all_sessions_end="false">
+      <users interarrival="1" unit="second"></users>
+    </arrivalphase>
+    <arrivalphase phase="2" duration="60" unit="second" wait_all_sessions_end="false">
+      <users interarrival="0.1" unit="second"></users>
+    </arrivalphase>
+    <arrivalphase phase="3" duration="60" unit="second" wait_all_sessions_end="false">
+      <users interarrival="0.01" unit="second"></users>
+    </arrivalphase>
+    <arrivalphase phase="4" duration="60" unit="second" wait_all_sessions_end="false">
+      <users interarrival="0.001" unit="second"></users>
+    </arrivalphase>
+    <!-- EXCLUDE START >
+    <arrivalphase phase="5" duration="360" unit="minute" wait_all_sessions_end="false">
+      <users interarrival="0.001" unit="second"></users>
+    </arrivalphase>
+    < EXCLUDE END -->
+  </load>
+
+  <options>
+    <option name="global_ack_timeout" value="10000"/>
+    <option type="ts_http" name="user_agent">
+      <user_agent probability="80">Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.8) Gecko/20050513 Galeon/1.3.21</user_agent>
+      <user_agent probability="20">Mozilla/5.0 (Windows; U; Windows NT 5.2; fr-FR; rv:1.7.8) Gecko/20050511 Firefox/1.0.4</user_agent>
+    </option>
+  </options>
+
+  <!-- start a session for a http user. the probability is the
+  frequency of this type os session. The sum of all session's
+  probabilities must be 100 -->
+  <sessions>
+
+    <session name="full_test" probability="100" type="ts_http">
+
+      <setdynvars sourcetype="random_string" length="64">
+        <var name="item_id" />
+        <var name="owner_id" />
+        <var name="position" />
+        <var name="type" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query Ping { ping { date datetime pong success time } }'>
+        <var name="ping_query" />
+      </setdynvars>
+      <setdynvars sourcetype="value" value='{}'>
+        <var name="ping_query_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query Info { info { node nodeList nodeVisible date time datetime ttl ttlHeartbeat remoteIp version } }'>
+        <var name="info_query" />
+      </setdynvars>
+      <setdynvars sourcetype="value" value='{}'>
+        <var name="info_query_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='mutation CreateItem($item: CreateItemInput!) { createItem(item: $item) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="create_item_mutation" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            {ok,Position}=ts_dynvars:lookup(position,DynVars),
+            {ok,Type}=ts_dynvars:lookup(type,DynVars),
+            Result = "{ \"item\": { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_1\", " ++
+              "\"position\": \"" ++ binary_to_list(Position) ++ "_1\", " ++
+              "\"type\": \"" ++ binary_to_list(Type) ++ "_1\" " ++
+              "} }",
+            list_to_binary(Result)
+          end.'>
+        <var name="create_item_mutation_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='mutation CreateItems($items: [CreateItemInput]!) { createItems(items: $items) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="create_items_mutation" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            {ok,Position}=ts_dynvars:lookup(position,DynVars),
+            {ok,Type}=ts_dynvars:lookup(type,DynVars),
+            Result = "{ \"items\": [ { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_2\", " ++
+              "\"position\": \"" ++ binary_to_list(Position) ++ "_1\", " ++
+              "\"type\": \"" ++ binary_to_list(Type) ++ "_1\" " ++
+              "}, {" ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_3\", " ++
+              "\"position\": \"" ++ binary_to_list(Position) ++ "_1\", " ++
+              "\"type\": \"" ++ binary_to_list(Type) ++ "_1\" " ++
+              "} ] }",
+            list_to_binary(Result)
+          end.'>
+        <var name="create_items_mutation_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query ReadItem($item: ReadItemInput!) { item(item: $item) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="read_item_query" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            Result = "{ \"item\": { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_1\" " ++
+              "} }",
+            list_to_binary(Result)
+          end.'>
+        <var name="read_item_query_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query ReadItems($items: [ReadItemInput]!) { items(items: $items) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="read_items_query" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            {ok,Position}=ts_dynvars:lookup(position,DynVars),
+            {ok,Type}=ts_dynvars:lookup(type,DynVars),
+            Result = "{ \"items\": [ { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_2\" " ++
+              "}, {" ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_3\" " ++
+              "} ] }",
+            list_to_binary(Result)
+          end.'>
+        <var name="read_items_query_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='mutation UpdateItem($item: UpdateItemInput!) { updateItem(item: $item) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="update_item_mutation" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            {ok,Position}=ts_dynvars:lookup(position,DynVars),
+            Result = "{ \"item\": { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_1\", " ++
+              "\"position\": \"" ++ binary_to_list(Position) ++ "_updated_1\" " ++
+              "} }",
+            list_to_binary(Result)
+          end.'>
+        <var name="update_item_mutation_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='mutation UpdateItems($items: [UpdateItemInput]!) { updateItems(items: $items) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="update_items_mutation" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            {ok,Position}=ts_dynvars:lookup(position,DynVars),
+            {ok,Type}=ts_dynvars:lookup(type,DynVars),
+            Result = "{ \"items\": [ { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_2\", " ++
+              "\"position\": \"" ++ binary_to_list(Position) ++ "_updated_1\", " ++
+              "\"type\": \"" ++ binary_to_list(Type) ++ "_updated_1\" " ++
+              "}, {" ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_3\", " ++
+              "\"type\": \"" ++ binary_to_list(Type) ++ "_updated_1\" " ++
+              "} ] }",
+            list_to_binary(Result)
+          end.'>
+        <var name="update_items_mutation_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='mutation DeleteItem($item: DeleteItemInput!) { deleteItem(item: $item) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="delete_item_mutation" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            Result = "{ \"item\": { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_1\" " ++
+              "} }",
+            list_to_binary(Result)
+          end.'>
+        <var name="delete_item_mutation_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='mutation DeleteItems($items: [DeleteItemInput]!) { deleteItems(items: $items) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="delete_items_mutation" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            {ok,OwnerId}=ts_dynvars:lookup(owner_id,DynVars),
+            Result = "{ \"items\": [ { " ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_2\" " ++
+              "}, {" ++
+              "\"itemId\": \"" ++ binary_to_list(ItemId) ++ "_1\", " ++
+              "\"ownerId\": \"" ++ binary_to_list(OwnerId) ++ "_3\" " ++
+              "} ] }",
+            list_to_binary(Result)
+          end.'>
+        <var name="delete_items_mutation_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query ReadById($itemId: String!) { getItemsById(itemId: $itemId) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="read_by_id_query" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            Result = "{ \"itemId\": " ++
+              "\"" ++ binary_to_list(ItemId) ++ "_1\" " ++
+              "}",
+            list_to_binary(Result)
+          end.'>
+        <var name="read_by_id_query_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query ReadByIds($itemIds: [String]!) { getItemsByIds(itemIds: $itemIds) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="read_by_ids_query" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,ItemId}=ts_dynvars:lookup(item_id,DynVars),
+            Result = "{ \"itemIds\": [ " ++
+              "\"" ++ binary_to_list(ItemId) ++ "_1\" " ++
+              "] }",
+            list_to_binary(Result)
+          end.'>
+        <var name="read_by_ids_query_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query Search($item: SearchItemInput!) { search(item: $item) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="search_query" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,Position}=ts_dynvars:lookup(position,DynVars),
+            {ok,Type}=ts_dynvars:lookup(type,DynVars),
+            Result = "{ \"item\": { " ++
+              "\"position\": \"" ++ binary_to_list(Position) ++ "_1\", " ++
+              "\"type\": \"" ++ binary_to_list(Type) ++ "_1\" " ++
+              "} }",
+            list_to_binary(Result)
+          end.'>
+        <var name="search_query_variables" />
+      </setdynvars>
+
+      <setdynvars sourcetype="value" value='query SearchUnion($items: [SearchItemInput]!) { searchUnion(items: $items) { itemId ownerId type position remoteIp createdAt updatedAt } }'>
+        <var name="search_union_query" />
+      </setdynvars>
+      <setdynvars sourcetype="eval"
+          code='fun({Pid,DynVars})->
+            {ok,Position}=ts_dynvars:lookup(position,DynVars),
+            {ok,Type}=ts_dynvars:lookup(type,DynVars),
+            Result = "{ \"items\": [ { " ++
+              "\"position\": \"" ++ binary_to_list(Position) ++ "_1\" " ++
+              "}, {" ++
+              "\"type\": \"" ++ binary_to_list(Type) ++ "_1\" " ++
+              "} ] }",
+            list_to_binary(Result)
+          end.'>
+        <var name="search_union_query_variables" />
+      </setdynvars>
+
+      <transaction name="PING">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_ping_query%%", "variables": %%_ping_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="INFO">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_info_query%%", "variables": %%_info_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="CREATE_ITEM">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_create_item_mutation%%", "variables": %%_create_item_mutation_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="CREATE_ITEMS">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_create_items_mutation%%", "variables": %%_create_items_mutation_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="READ_ITEM">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_read_item_query%%", "variables": %%_read_item_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="READ_ITEMS">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_read_items_query%%", "variables": %%_read_items_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="READ_BY_ID">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_read_by_id_query%%", "variables": %%_read_by_id_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="READ_BY_IDS">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_read_by_ids_query%%", "variables": %%_read_by_ids_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="SEARCH">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_search_query%%", "variables": %%_search_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="SEARCH_UNION">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_search_union_query%%", "variables": %%_search_union_query_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="UPDATE_ITEM">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_update_item_mutation%%", "variables": %%_update_item_mutation_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="UPDATE_ITEMS">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_update_items_mutation%%", "variables": %%_update_items_mutation_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="DELETE_ITEM">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_delete_item_mutation%%", "variables": %%_delete_item_mutation_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+      <transaction name="DELETE_ITEMS">
+        <request subst="true">
+          <http url="/graphql" method="POST" version="1.1" contents='{ "query": "%%_delete_items_mutation%%", "variables": %%_delete_items_mutation_variables%% }'>
+            <http_header name="Content-Type" value="application/json"/>
+          </http>
+        </request>
+      </transaction>
+
+    <!-- EXCLUDE START >
+    < EXCLUDE END -->
+
+    </session>
+  </sessions>
+</tsung>
+
