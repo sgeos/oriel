@@ -61,26 +61,26 @@ defmodule Oriel.Cache.Server do
     GenServer.start_link(__MODULE__, init_args, options)
   end
 
-  def info(), do: GenServer.call(__MODULE__, :info)
-  def info(server), do: GenServer.call(server, :info)
+  def info(), do: GenServer.call(__MODULE__, :info, @timeout)
+  def info(server), do: GenServer.call(server, :info, @timeout)
 
-  def create(input), do: GenServer.call(__MODULE__, {:create, input})
-  def create(server, input), do: GenServer.call(server, {:create, input})
+  def create(input), do: GenServer.call(__MODULE__, {:create, input}, @timeout)
+  def create(server, input), do: GenServer.call(server, {:create, input}, @timeout)
 
-  def read(input), do: GenServer.call(__MODULE__, {:read, input})
-  def read(server, input), do: GenServer.call(server, {:read, input})
+  def read(input), do: GenServer.call(__MODULE__, {:read, input}, @timeout)
+  def read(server, input), do: GenServer.call(server, {:read, input}, @timeout)
 
-  def update(input), do: GenServer.call(__MODULE__, {:update, input})
-  def update(server, input), do: GenServer.call(server, {:update, input})
+  def update(input), do: GenServer.call(__MODULE__, {:update, input}, @timeout)
+  def update(server, input), do: GenServer.call(server, {:update, input}, @timeout)
 
-  def delete(input), do: GenServer.call(__MODULE__, {:delete, input})
-  def delete(server, input), do: GenServer.call(server, {:delete, input})
+  def delete(input), do: GenServer.call(__MODULE__, {:delete, input}, @timeout)
+  def delete(server, input), do: GenServer.call(server, {:delete, input}, @timeout)
 
-  def get_items_by_id(input), do: GenServer.call(__MODULE__, {:get_items_by_id, input})
-  def get_items_by_id(server, input), do: GenServer.call(server, {:get_items_by_id, input})
+  def get_items_by_id(input), do: GenServer.call(__MODULE__, {:get_items_by_id, input}, @timeout)
+  def get_items_by_id(server, input), do: GenServer.call(server, {:get_items_by_id, input}, @timeout)
 
-  def search(input), do: GenServer.call(__MODULE__, {:search, input})
-  def search(server, input), do: GenServer.call(server, {:search, input})
+  def search(input), do: GenServer.call(__MODULE__, {:search, input}, @timeout)
+  def search(server, input), do: GenServer.call(server, {:search, input}, @timeout)
 
   def ttl_expire(), do: ttl_expire(__MODULE__)
   def ttl_expire(server) do
@@ -101,31 +101,31 @@ defmodule Oriel.Cache.Server do
         ttl_heartbeat: Timex.Duration.from_milliseconds(ttl_heartbeat),
       }
     )
-    {:reply, reply, state, @timeout}
+    {:reply, reply, state}
   end
 
-  def handle_call({:create, input}, _from, state), do: {:reply, Store.create(input), state, @timeout}
+  def handle_call({:create, input}, _from, state), do: {:reply, Store.create(input), state}
 
-  def handle_call({:read, input}, _from, state), do: {:reply, Store.read(input), state, @timeout}
+  def handle_call({:read, input}, _from, state), do: {:reply, Store.read(input), state}
 
-  def handle_call({:update, input}, _from, state), do: {:reply, Store.update(input), state, @timeout}
+  def handle_call({:update, input}, _from, state), do: {:reply, Store.update(input), state}
 
-  def handle_call({:delete, input}, _from, state), do: {:reply, Store.delete(input), state, @timeout}
+  def handle_call({:delete, input}, _from, state), do: {:reply, Store.delete(input), state}
 
-  def handle_call({:get_items_by_id, input}, _from, state), do: {:reply, Store.get_items_by_id(input), state, @timeout}
+  def handle_call({:get_items_by_id, input}, _from, state), do: {:reply, Store.get_items_by_id(input), state}
 
-  def handle_call({:search, input}, _from, state), do: {:reply, Store.search(input), state, @timeout}
+  def handle_call({:search, input}, _from, state), do: {:reply, Store.search(input), state}
 
-  def handle_call(_msg, state), do: {:noreply, state, @timeout}
+  def handle_call(_msg, state), do: {:noreply, state}
 
-  def handle_cast(_msg, state), do: {:noreply, state, @timeout}
+  def handle_cast(_msg, state), do: {:noreply, state}
 
   def handle_info(:ttl, %{ttl: ttl, ttl_timer: ttl_timer}=state) do
     Process.cancel_timer(ttl_timer)
     Store.ttl_expire(ttl)
-    {:noreply, next_ttl_expire(state), @timeout}
+    {:noreply, next_ttl_expire(state)}
   end
 
-  def handle_info(_msg, state), do: {:noreply, state, @timeout}
+  def handle_info(_msg, state), do: {:noreply, state}
 end
 
