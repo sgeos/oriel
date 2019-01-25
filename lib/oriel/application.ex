@@ -16,8 +16,8 @@ defmodule Oriel.Application do
 
   def start(_type, _args) do
     this_node = [node()]
-    init_nodes(this_node)
     nodes = Config.get_atom_list(:oriel, :node_list, [node()])
+    init_nodes(nodes)
     topologies = [
       epmd: [
         strategy: Cluster.Strategy.Epmd,

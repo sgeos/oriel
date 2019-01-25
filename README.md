@@ -64,7 +64,7 @@ GraphQL Query Examples
 QUERY='query Ping { ping { date datetime pong success time } }'
 QUERY_VARIABLES='{}'
 
-QUERY='query Info { info { node nodeList nodeVisible date time datetime ttl ttlHeartbeat remoteIp version } }'
+QUERY='query Info { info { node nodeList nodeVisible fragmentProperties { baseTable foreignKey hashModule hashState baseTable nFragments nodePool } date time datetime ttl ttlHeartbeat remoteIp version } }'
 QUERY_VARIABLES='{}'
 
 QUERY='mutation CreateItem($item: CreateItemInput!) { createItem(item: $item) { itemId ownerId type position remoteIp createdAt updatedAt } }'
@@ -126,6 +126,15 @@ query Diagnostic {
     node
     nodeList
     nodeVisible
+    fragmentProperties {
+      baseTable
+      foreignKey
+      hashModule
+      hashState
+      baseTable
+      nFragments
+      nodePool
+    }
     date
     time
     datetime

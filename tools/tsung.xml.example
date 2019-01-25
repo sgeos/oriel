@@ -78,7 +78,7 @@
         <var name="ping_query_variables" />
       </setdynvars>
 
-      <setdynvars sourcetype="value" value='query Info { info { node nodeList nodeVisible date time datetime ttl ttlHeartbeat remoteIp version } }'>
+      <setdynvars sourcetype="value" value='query Info { info { node nodeList nodeVisible fragmentProperties { baseTable foreignKey hashModule hashState baseTable nFragments nodePool } date time datetime ttl ttlHeartbeat remoteIp version } }'>
         <var name="info_query" />
       </setdynvars>
       <setdynvars sourcetype="value" value='{}'>

@@ -18,11 +18,22 @@ defmodule OrielWeb.GraphQL.Types do
     field :node, :string
     field :node_list, list_of(:string)
     field :node_visible, list_of(:string)
+    field :fragment_properties, list_of(:fragment_properties)
     field :time, :time
     field :ttl, :duration
     field :ttl_heartbeat, :duration
     field :remote_ip, :ip_address
     field :version, :string
+  end
+
+  object :fragment_properties do
+    field :base_table, :string
+    field :foreign_key, :string
+    field :hash_module, :string
+    field :hash_state, :string
+    #field :hash_state: {:hash_state, 32, 1, 5, :phash2},
+    field :n_fragments, :integer
+    field :node_pool, list_of(:string)
   end
 
   object :item do

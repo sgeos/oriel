@@ -59,16 +59,25 @@ defmodule Oriel.Cache.Store do
   Mnesiac will call this method to initialize the table
   """
   def init_store do
+    frag_properties = [
+        node_pool: Config.get_atom_list(:oriel, :node_list, [node()]),
+        n_fragments: 32,
+        n_ram_copies: 0,
+        n_disc_copies: 1,
+        n_disc_only_copies: 0
+      ]
     :mnesia.create_table(
       :item,
       attributes: store_keys(:item),
       index: [:updated_at],
-      disc_copies: [Node.self()]
+      disc_copies: [Node.self()],
+      frag_properties: frag_properties
     )
     :mnesia.create_table(
       :item_key_owner_search,
       attributes: store_keys(:item_key_owner_search),
-      disc_copies: [Node.self()]
+      disc_copies: [Node.self()],
+      frag_properties: frag_properties
     )
   end
 
@@ -185,16 +194,16 @@ defmodule Oriel.Cache.Store do
   end
 
   defp mnesia_transaction(input, callback) when is_map(input) do
-    :mnesia.transaction(fn -> callback.(input) end)
+    :mnesia.activity(:transaction, callback, [input], :mnesia_frag)
     |> mnesia_result
   end
   defp mnesia_transaction(input, callback) when is_list(input) do
-    :mnesia.transaction(fn -> input |> do_map(callback) end)
+    :mnesia.activity(:transaction, &do_map/2, [input, callback], :mnesia_frag)
     |> mnesia_result
   end
 
   defp mnesia_raw_transaction(input, callback) do
-    :mnesia.transaction(fn -> callback.(input) end)
+    :mnesia.activity(:transaction, callback, [input], :mnesia_frag)
     |> mnesia_result
   end
 
@@ -215,11 +224,25 @@ defmodule Oriel.Cache.Store do
 
   ## Client API
 
+  defp info_fragment_properties do
+      [:item, :item_key_owner_search]
+      |> Enum.map(
+        fn table ->
+          result = table
+          |> :mnesia.table_info(:frag_properties)
+          |> Enum.into(%{})
+          result
+          |> Map.put(:hash_state, inspect(result[:hash_state]))
+        end
+      )
+  end
+
   def info do
     :all
-    |> :mnesia.system_info
+    |> :mnesia.system_info()
     |> Enum.into(%{})
     |> Map.merge(%{
+      fragment_properties: info_fragment_properties(),
       node: node() |> to_string,
       node_visible: [node() | Node.list(:visible)] |> Enum.map(&to_string/1),
     })
